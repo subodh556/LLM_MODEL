@@ -1,19 +1,9 @@
 from pathlib import Path
 import sys
+
 import tiktoken
 import torch
 import gradio as gr
-import os
-
-from huggingface_hub import login
-
-from dotenv import load_dotenv , find_dotenv
-
-_ = load_dotenv(find_dotenv())
-
-# Login using your access token
-
-login(token=os.environ["huggiface_api"])
 
 from previous_chapters import (
     generate,
@@ -103,4 +93,4 @@ demo = gr.ChatInterface(
 
 # Launch the app
 if __name__ == "__main__":
-    demo.launch(server_name="127.0.0.1", server_port=7860, share=True, pwa=True)
+    demo.launch(server_name="127.0.0.1", server_port=7860, share=True)
