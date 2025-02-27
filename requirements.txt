@@ -1,0 +1,6 @@
+matplotlib
+tiktoken
+torch
+tqdm
+tensorflow
+chainlit
