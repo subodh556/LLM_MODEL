@@ -1,9 +1,19 @@
 from pathlib import Path
 import sys
-
 import tiktoken
 import torch
-import chainlit
+import gradio as gr
+import os
+
+from huggingface_hub import login
+
+from dotenv import load_dotenv , find_dotenv
+
+_ = load_dotenv(find_dotenv())
+
+# Login using your access token
+
+login(token=os.environ["huggiface_api"])
 
 from previous_chapters import (
     generate,
@@ -33,8 +43,6 @@ def get_model_and_tokenizer():
 
     tokenizer = tiktoken.get_encoding("gpt2")
 
-    
-
     model_path = Path(".") / "gpt2-small124M-sft.pth"
     if not model_path.exists():
         print(
@@ -55,28 +63,25 @@ def extract_response(response_text, input_text):
     return response_text[len(input_text):].replace("### Response:", "").strip()
 
 
-# Obtain the necessary tokenizer and model files for the chainlit function below
+# Load the model and tokenizer once when the app starts
 tokenizer, model, model_config = get_model_and_tokenizer()
 
-
-@chainlit.on_message
-async def main(message: chainlit.Message):
+def predict(message, history):
     """
-    The main Chainlit function.
+    Generate response from the model based on user input.
     """
-
     torch.manual_seed(123)
 
     prompt = f"""Below is an instruction that describes a task. Write a response
     that appropriately completes the request.
 
     ### Instruction:
-    {message.content}
+    {message}
     """
 
-    token_ids = generate(  # function uses `with torch.no_grad()` internally already
+    token_ids = generate(
         model=model,
-        idx=text_to_token_ids(prompt, tokenizer).to(device),  # The user text is provided via as `message.content`
+        idx=text_to_token_ids(prompt, tokenizer).to(device),
         max_new_tokens=35,
         context_size=model_config["context_length"],
         eos_id=50256
@@ -84,7 +89,18 @@ async def main(message: chainlit.Message):
 
     text = token_ids_to_text(token_ids, tokenizer)
     response = extract_response(text, prompt)
+    
+    return response
 
-    await chainlit.Message(
-        content=f"{response}",  # This returns the model response to the interface
-    ).send()
+# Create Gradio Interface
+demo = gr.ChatInterface(
+    fn=predict,
+    title="Instructions based Large Language Model",
+    description="Chat with a self made Large Language Model that can generate responses based upon prompts.",
+    examples=["Tell me a short story", "Explain quantum physics", "What is machine learning?"],
+    theme="default"
+)
+
+# Launch the app
+if __name__ == "__main__":
+    demo.launch(server_name="127.0.0.1", server_port=7860, share=True, pwa=True)

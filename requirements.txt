@@ -3,4 +3,5 @@ tiktoken
 torch
 tqdm
 tensorflow
-chainlit
+gradio
+dotenv
